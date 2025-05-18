@@ -90,6 +90,9 @@ export default function Login() {
           isAdmin: false
         });
 
+        // Lưu token vào AsyncStorage
+        await AsyncStorage.setItem('userToken', response.data.accesstoken);
+
         if (rememberMe) {
           await AsyncStorage.setItem('email', email);
           await AsyncStorage.setItem('password', password);

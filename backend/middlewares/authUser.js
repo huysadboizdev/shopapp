@@ -1,23 +1,52 @@
 import jwt from 'jsonwebtoken'
+import userModel from '../models/userModel.js'
+
 // user authentication middleware
 const authUser = async (req, res, next) => {
     try {
-        const { token } = req.headers
+        // Log headers for debugging
+        console.log('Request headers:', req.headers);
+        
+        const token = req.headers.token || req.headers.authorization?.split(' ')[1];
+        console.log('Token:', token);
+
         if (!token) {
-            return res.json({ success: false, message: "Not Authorized Login Again" })
+            return res.status(401).json({ 
+                success: false, 
+                message: "Không tìm thấy token. Vui lòng đăng nhập lại" 
+            });
         }
-        const token_decode = jwt.verify(token, process.env.ACCESS_TOKEN_SECERT)
 
-        req.body = req.body || {};
-        req.body.userId = token_decode.id
+        // Verify token
+        const token_decode = jwt.verify(token, process.env.ACCESS_TOKEN_SECERT);
+        console.log('Decoded token:', token_decode);
+        
+        // Find user
+        const user = await userModel.findById(token_decode.id);
+        console.log('Found user:', user);
 
-        next()
+        if (!user) {
+            return res.status(401).json({ 
+                success: false, 
+                message: "Không tìm thấy người dùng" 
+            });
+        }
 
+        // Set user info in request
+        req.user = {
+            userId: user._id,
+            isAdmin: user.isAdmin
+        };
+        console.log('Set user in request:', req.user);
+
+        next();
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        console.log('Auth middleware error:', error);
+        return res.status(401).json({ 
+            success: false, 
+            message: "Token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại" 
+        });
     }
 }
-
 
 export default authUser

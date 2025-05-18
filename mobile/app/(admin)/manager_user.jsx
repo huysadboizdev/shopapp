@@ -35,7 +35,7 @@ export default function ManagerUser() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get('http://192.168.1.4:4000/api/admin/getuser', {
+      const response = await axios.get('http://192.168.19.104:4000/api/admin/getuser', {
         headers: {
           token: user.token
         }
@@ -74,7 +74,7 @@ export default function ManagerUser() {
           onPress: async () => {
             try {
               const response = await axios.post(
-                'http://192.168.1.4:4000/api/admin/delete-user',
+                'http://192.168.19.104:4000/api/admin/delete-user',
                 { userId },
                 {
                   headers: {
@@ -99,7 +99,7 @@ export default function ManagerUser() {
   const handleSubmit = async () => {
     try {
       const response = await axios.post(
-        'http://192.168.1.4:4000/api/admin/update-user',
+        'http://192.168.19.104:4000/api/admin/update-user',
         {
           userId: editingUser._id,
           ...formData,

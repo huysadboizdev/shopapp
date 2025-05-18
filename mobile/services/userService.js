@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Sử dụng địa chỉ IP thực tế của máy tính của bạn
-const API_URL = 'http://192.168.19.101:4000/api'; // Thay đổi IP này theo địa chỉ IP của máy tính của bạn
+const API_URL = 'http://192.168.19.104:4000/api'; // Thay đổi IP này theo địa chỉ IP của máy tính của bạn
 
 // Tạo instance axios với cấu hình mặc định
 const api = axios.create({

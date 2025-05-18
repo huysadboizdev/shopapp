@@ -63,7 +63,17 @@ export default function TabLayout() {
           ),
         }}
       />
-      
+
+<Tabs.Screen 
+        name="profile"
+        options={{ 
+          title: "Tài Khoản",
+          tabBarIcon: ({color, size}) => (
+            <Ionicons name="person" size={size} color={color}/>
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="setting"
         options={{ 
