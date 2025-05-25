@@ -7,42 +7,51 @@ const API_URL = 'http://192.168.19.104:4000/api';
 const ADMIN_EMAIL = "admin@gmail.com"; // thêm email admin
 const ADMIN_PASSWORD = "admin123";     // thêm password admin
 
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
     token: null,
     user: null,
     isAuthenticated: false,
     isLoading: false,
     error: null,
-    role: null, // Thêm role vào state
+    role: null,
 
     initialize: async () => {
         try {
+            const token = await AsyncStorage.getItem('token');
             const userStr = await AsyncStorage.getItem('user');
-            if (userStr) {
-                set({ user: JSON.parse(userStr) });
+            const role = await AsyncStorage.getItem('role');
+            
+            console.log('Initializing auth store...');
+            console.log('Token from storage:', token);
+            console.log('User from storage:', userStr);
+            console.log('Role from storage:', role);
+            
+            if (token && userStr) {
+                const user = JSON.parse(userStr);
+                set({ 
+                    token,
+                    user,
+                    role,
+                    isAuthenticated: true 
+                });
+                console.log('Auth store initialized successfully');
+            } else {
+                console.log('No valid auth data found in storage');
+                set({ 
+                    token: null, 
+                    user: null, 
+                    role: null,
+                    isAuthenticated: false 
+                });
             }
         } catch (error) {
             console.error('Error initializing auth store:', error);
-        }
-    },
-
-    setToken: async (newToken) => {
-        try {
-            await AsyncStorage.setItem('token', newToken);
-            set({ token: newToken, isAuthenticated: true });
-        } catch (error) {
-            console.error('Error setting token:', error);
-        }
-    },
-
-    removeToken: async () => {
-        try {
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('user');
-            await AsyncStorage.removeItem('role');
-            set({ token: null, user: null, isAuthenticated: false, role: null });
-        } catch (error) {
-            console.error('Error removing token:', error);
+            set({ 
+                token: null, 
+                user: null, 
+                role: null,
+                isAuthenticated: false 
+            });
         }
     },
 
@@ -55,66 +64,45 @@ const useAuthStore = create((set) => ({
         set({ user });
     },
 
-    logout: async () => {
-        try {
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('user');
-            await AsyncStorage.removeItem('role');
-            set({ token: null, user: null, isAuthenticated: false, role: null });
-        } catch (error) {
-            console.error('Error during logout:', error);
-        }
-    },
-
-    register: async (username, email, phone, password_1, password_2) => {
-        try {
-            set({ isLoading: true, error: null });
-            const response = await axios.post(`${API_URL}/user/register`, {
-                username,
-                email,
-                phone,
-                password_1,
-                password_2
-            });
-
-            if (response.data.success) {
-                const token = response.data.accesstoken;
-                await AsyncStorage.setItem('token', token);
-                
-                set({ 
-                    token,
-                    isAuthenticated: true,
-                    isLoading: false 
-                });
-                
-                return { success: true, data: response.data };
-            } else {
-                throw new Error(response.data.message || 'Registration failed');
-            }
-        } catch (error) {
-            console.error('Registration error:', error);
-            set({ error: error.message, isLoading: false });
-            return { success: false, error: error.message };
-        }
-    },
-
     login: async (email, password) => {
         try {
             set({ isLoading: true, error: null });
+            console.log('Attempting login...');
+            
             const response = await axios.post(`${API_URL}/user/login`, {
                 email,
                 password
             });
 
+            console.log('Login response:', response.data);
+
             if (response.data.success && response.data.accesstoken) {
                 const token = response.data.accesstoken;
+                const user = response.data.user;
+                const role = response.data.role;
+
+                console.log('Login successful, storing data...');
+                console.log('Token:', token);
+                console.log('User:', user);
+                console.log('Role:', role);
+
+                // Store in AsyncStorage
                 await AsyncStorage.setItem('token', token);
+                await AsyncStorage.setItem('user', JSON.stringify(user));
+                await AsyncStorage.setItem('role', role);
                 
+                // Update state
                 set({ 
                     token,
+                    user,
+                    role,
                     isAuthenticated: true,
                     isLoading: false 
                 });
+
+                // Verify storage
+                const storedToken = await AsyncStorage.getItem('token');
+                console.log('Verified stored token:', storedToken);
                 
                 return { success: true, data: response.data };
             } else {
@@ -122,35 +110,91 @@ const useAuthStore = create((set) => ({
             }
         } catch (error) {
             console.error('Login error:', error);
-            set({ error: error.message, isLoading: false });
+            set({ 
+                error: error.message, 
+                isLoading: false,
+                token: null,
+                user: null,
+                role: null,
+                isAuthenticated: false
+            });
             return { success: false, error: error.message };
         }
     },
 
-    clearError: () => {
-        set({ error: null });
-    },
-
     checkAuth: async () => {
         try {
+            console.log('Checking authentication...');
             const token = await AsyncStorage.getItem('token');
-            const userJson = await AsyncStorage.getItem('user');
+            const userStr = await AsyncStorage.getItem('user');
             const role = await AsyncStorage.getItem('role');
-            const user = userJson ? JSON.parse(userJson) : null;
+            
+            console.log('Auth check - token:', token);
+            console.log('Auth check - user:', userStr);
+            console.log('Auth check - role:', role);
 
-            set({ user, token, role });
+            if (!token || !userStr) {
+                console.log('No valid auth data found');
+                set({ 
+                    token: null, 
+                    user: null, 
+                    role: null,
+                    isAuthenticated: false 
+                });
+                return false;
+            }
+
+            const user = JSON.parse(userStr);
+            set({ 
+                token, 
+                user, 
+                role,
+                isAuthenticated: true 
+            });
+            console.log('Auth check successful');
+            return true;
         } catch (error) {
             console.error('Error checking auth:', error);
+            set({ 
+                token: null, 
+                user: null, 
+                role: null,
+                isAuthenticated: false 
+            });
+            return false;
         }
     },
 
+    logout: async () => {
+        try {
+            console.log('Logging out...');
+            await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem('user');
+            await AsyncStorage.removeItem('role');
+            set({ 
+                token: null, 
+                user: null, 
+                isAuthenticated: false, 
+                role: null 
+            });
+            console.log('Logout complete');
+        } catch (error) {
+            console.error('Error during logout:', error);
+        }
+    },
+
+    getToken: () => {
+        const state = get();
+        return state.token;
+    },
+
     isAdmin: () => {
-        const user = useAuthStore.getState().user;
-        return user?.role === 'admin';
+        const state = get();
+        return state.role === 'admin';
     },
 
     isUser: () => {
-        const state = useAuthStore.getState();
+        const state = get();
         return state.role === 'user';
     }
 }));

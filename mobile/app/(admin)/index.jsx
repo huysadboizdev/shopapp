@@ -18,7 +18,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -28,21 +28,39 @@ export default function AdminDashboard() {
     try {
       const response = await axios.get('http://192.168.19.104:4000/api/admin/dashboard', {
         headers: {
-          token: user.token
+          Authorization: `Bearer ${user.token}`
         }
       });
 
       if (response.data.success) {
         setStats(response.data.stats);
       } else {
-        Alert.alert('Error', 'Failed to fetch dashboard data');
+        Alert.alert('Lỗi', response.data.message || 'Không thể lấy dữ liệu thống kê');
       }
     } catch (error) {
       console.error('Dashboard error:', error);
-      Alert.alert('Error', 'Failed to fetch dashboard data');
+      Alert.alert('Lỗi', 'Không thể lấy dữ liệu thống kê');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Xác nhận đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Đăng xuất',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            router.replace('/login');
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
@@ -58,6 +76,9 @@ export default function AdminDashboard() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Admin Dashboard</Text>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Ionicons name="log-out-outline" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       {/* Stats Cards */}
@@ -135,11 +156,19 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     padding: 20,
     paddingTop: 60,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   statsContainer: {
     flexDirection: 'row',

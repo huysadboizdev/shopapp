@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
+import COLORS from '../../constants/colors';
 
 export default function Settings() {
   const { setUser } = useAuthStore();
@@ -35,56 +36,88 @@ export default function Settings() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tài khoản</Text>
-        
-        <TouchableOpacity style={styles.menuItem}>
-          <FontAwesome name="bell" size={20} color="#666" />
-          <Text style={styles.menuText}>Thông báo</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <FontAwesome name="lock" size={20} color="#666" />
-          <Text style={styles.menuText}>Bảo mật</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <FontAwesome name="question-circle" size={20} color="#666" />
-          <Text style={styles.menuText}>Trợ giúp & Hỗ trợ</Text>
-        </TouchableOpacity>
+    <View style={styles.mainContainer}>
+      <View style={styles.navbar}>
+        <Text style={styles.navbarTitle}>Cài đặt</Text>
       </View>
+      <ScrollView style={styles.container}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tài khoản</Text>
+          
+          <TouchableOpacity style={styles.menuItem}>
+            <FontAwesome name="bell" size={20} color="#666" />
+            <Text style={styles.menuText}>Thông báo</Text>
+          </TouchableOpacity>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Thông tin</Text>
-        
-        <TouchableOpacity style={styles.menuItem}>
-          <FontAwesome name="info-circle" size={20} color="#666" />
-          <Text style={styles.menuText}>Về ứng dụng</Text>
+          <TouchableOpacity style={styles.menuItem}>
+            <FontAwesome name="lock" size={20} color="#666" />
+            <Text style={styles.menuText}>Bảo mật</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <FontAwesome name="question-circle" size={20} color="#666" />
+            <Text style={styles.menuText}>Trợ giúp & Hỗ trợ</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Thông tin</Text>
+          
+          <TouchableOpacity style={styles.menuItem}>
+            <FontAwesome name="info-circle" size={20} color="#666" />
+            <Text style={styles.menuText}>Về ứng dụng</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <FontAwesome name="file-text" size={20} color="#666" />
+            <Text style={styles.menuText}>Điều khoản sử dụng</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <FontAwesome name="shield" size={20} color="#666" />
+            <Text style={styles.menuText}>Chính sách bảo mật</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <FontAwesome name="file-text" size={20} color="#666" />
-          <Text style={styles.menuText}>Điều khoản sử dụng</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <FontAwesome name="shield" size={20} color="#666" />
-          <Text style={styles.menuText}>Chính sách bảo mật</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Đăng xuất</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  navbar: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    height: 190,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  navbarTitle: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 20,
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    marginTop: -40,
   },
   section: {
     padding: 20,

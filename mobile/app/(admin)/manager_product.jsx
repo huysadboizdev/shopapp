@@ -42,18 +42,18 @@ export default function ManagerProduct() {
     try {
       const response = await axios.get('http://192.168.19.104:4000/api/admin/list', {
         headers: {
-          token: user.token
+          Authorization: `Bearer ${user.token}`
         }
       });
 
       if (response.data.success) {
         setProducts(response.data.products);
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to fetch products');
+        Alert.alert('Lỗi', response.data.message || 'Không thể lấy danh sách sản phẩm');
       }
     } catch (error) {
       console.error('Error fetching products:', error);
-      Alert.alert('Error', 'Failed to fetch products');
+      Alert.alert('Lỗi', 'Không thể lấy danh sách sản phẩm');
     } finally {
       setLoading(false);
     }
@@ -85,20 +85,15 @@ export default function ManagerProduct() {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('Deleting product with ID:', productId);
-              console.log('Using token:', user.token);
-              
               const response = await axios.post(
                 'http://192.168.19.104:4000/api/admin/delete',
                 { productId },
                 {
                   headers: {
-                    token: user.token
+                    Authorization: `Bearer ${user.token}`
                   }
                 }
               );
-
-              console.log('Delete response:', response.data);
 
               if (response.data.success) {
                 Alert.alert('Thành công', 'Đã xóa sản phẩm thành công');
@@ -107,11 +102,8 @@ export default function ManagerProduct() {
                 Alert.alert('Lỗi', response.data.message || 'Không thể xóa sản phẩm');
               }
             } catch (error) {
-              console.error('Error deleting product:', error.response?.data || error.message);
-              Alert.alert(
-                'Lỗi',
-                error.response?.data?.message || 'Không thể xóa sản phẩm. Vui lòng thử lại.'
-              );
+              console.error('Error deleting product:', error.response?.data || error);
+              Alert.alert('Lỗi', error.response?.data?.message || 'Không thể xóa sản phẩm. Vui lòng thử lại.');
             }
           },
         },
@@ -136,7 +128,7 @@ export default function ManagerProduct() {
     try {
       if (!formData.category || !formData.name || !formData.color || 
           !formData.size || !formData.description || !formData.price) {
-        Alert.alert('Error', 'Please fill in all required fields');
+        Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
         return;
       }
 
@@ -167,21 +159,21 @@ export default function ManagerProduct() {
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            token: user.token,
+            Authorization: `Bearer ${user.token}`,
           },
         }
       );
 
       if (response.data.success) {
-        Alert.alert('Success', `Product ${editingProduct ? 'updated' : 'added'} successfully`);
+        Alert.alert('Thành công', `Sản phẩm đã được ${editingProduct ? 'cập nhật' : 'thêm'} thành công`);
         setModalVisible(false);
         fetchProducts();
       } else {
-        Alert.alert('Error', response.data.message || 'Operation failed');
+        Alert.alert('Lỗi', response.data.message || 'Thao tác thất bại');
       }
     } catch (error) {
       console.error('Error submitting product:', error);
-      Alert.alert('Error', `Failed to ${editingProduct ? 'update' : 'add'} product`);
+      Alert.alert('Lỗi', `Không thể ${editingProduct ? 'cập nhật' : 'thêm'} sản phẩm`);
     }
   };
 
@@ -380,8 +372,12 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: 10,
-    borderRadius: 25,
+    padding: 6,
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   listContainer: {
     padding: 15,
@@ -445,22 +441,23 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 20,
-    width: '90%',
-    maxHeight: '80%',
+    padding: 15,
+    width: '85%',
+    maxHeight: '70%',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 15,
     textAlign: 'center',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
+    padding: 8,
+    marginBottom: 10,
+    fontSize: 14,
   },
   imageButton: {
     backgroundColor: COLORS.primary,
@@ -496,17 +493,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   imageSection: {
-    marginBottom: 15,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   orText: {
     textAlign: 'center',
-    marginVertical: 10,
+    marginVertical: 8,
     color: '#666',
+    fontSize: 12,
   },
   imagePreview: {
     marginTop: 10,

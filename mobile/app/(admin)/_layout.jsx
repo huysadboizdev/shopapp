@@ -63,11 +63,11 @@ export default function AdminLayout() {
         }}
       />
       <Tabs.Screen
-        name="setting"
+        name="manager_review"
         options={{
-          title: 'Cài Đặt',
+          title: 'Đánh Giá',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
+            <Ionicons name="star-outline" size={size} color={color} />
           ),
         }}
       />

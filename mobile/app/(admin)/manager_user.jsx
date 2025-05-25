@@ -37,15 +37,18 @@ export default function ManagerUser() {
     try {
       const response = await axios.get('http://192.168.19.104:4000/api/admin/getuser', {
         headers: {
-          token: user.token
+          Authorization: `Bearer ${user.token}`
         }
       });
 
       if (response.data.success) {
         setUsers(response.data.users);
+      } else {
+        Alert.alert('Lỗi', response.data.message || 'Không thể lấy danh sách người dùng');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to fetch users');
+      console.error('Error fetching users:', error);
+      Alert.alert('Lỗi', 'Không thể lấy danh sách người dùng');
     } finally {
       setLoading(false);
     }
@@ -73,22 +76,25 @@ export default function ManagerUser() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await axios.post(
+              const response = await axios.delete(
                 'http://192.168.19.104:4000/api/admin/delete-user',
-                { userId },
                 {
+                  data: { userId },
                   headers: {
-                    token: user.token
+                    Authorization: `Bearer ${user.token}`
                   }
                 }
               );
 
               if (response.data.success) {
-                Alert.alert('Success', 'User deleted successfully');
+                Alert.alert('Thành công', 'Đã xóa người dùng thành công');
                 fetchUsers();
+              } else {
+                Alert.alert('Lỗi', response.data.message || 'Không thể xóa người dùng');
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete user');
+              console.error('Error deleting user:', error);
+              Alert.alert('Lỗi', 'Không thể xóa người dùng');
             }
           },
         },
@@ -98,7 +104,7 @@ export default function ManagerUser() {
 
   const handleSubmit = async () => {
     try {
-      const response = await axios.post(
+      const response = await axios.put(
         'http://192.168.19.104:4000/api/admin/update-user',
         {
           userId: editingUser._id,
@@ -106,18 +112,21 @@ export default function ManagerUser() {
         },
         {
           headers: {
-            token: user.token
+            Authorization: `Bearer ${user.token}`
           }
         }
       );
 
       if (response.data.success) {
-        Alert.alert('Success', 'User updated successfully');
+        Alert.alert('Thành công', 'Cập nhật thông tin người dùng thành công');
         setModalVisible(false);
         fetchUsers();
+      } else {
+        Alert.alert('Lỗi', response.data.message || 'Không thể cập nhật thông tin người dùng');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to update user');
+      console.error('Error updating user:', error);
+      Alert.alert('Lỗi', 'Không thể cập nhật thông tin người dùng');
     }
   };
 

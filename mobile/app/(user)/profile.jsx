@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../store/authStore';
+import COLORS from '../../constants/colors';
 
 const Profile = () => {
     const router = useRouter();
@@ -334,31 +335,30 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     navbar: {
+        backgroundColor: COLORS.primary,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingTop: 50,
-        paddingBottom: 12,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e1e1e1',
-        elevation: 2,
+        alignItems: 'center',
+        elevation: 4,
         shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        height: 150,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+    },
+    navbarTitle: {
+        color: 'white',
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginTop: 20,
     },
     backButton: {
         padding: 8,
-    },
-    navbarTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
     },
     logoutButton: {
         padding: 8,

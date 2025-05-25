@@ -1,5 +1,7 @@
 import Product from '../models/productModel.js';
 import userModel from '../models/userModel.js';
+import orderModel from '../models/orderModel.js';
+import Review from '../models/reviewModel.js';
 import jwt from 'jsonwebtoken';
 import cloudinary from 'cloudinary';
 
@@ -208,5 +210,343 @@ export const deleteUser = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getAllOrders = async (req, res) => {
+    try {
+        const orders = await orderModel.find()
+            .populate('user', 'name email')
+            .sort({ createdAt: -1 });
+
+        res.json({ success: true, orders });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getOrderDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = await orderModel.findById(id)
+            .populate('user', 'name email');
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng" });
+        }
+
+        res.json({ success: true, order });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const updateOrderStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, paymentStatus } = req.body;
+
+        const validStatuses = ['Pending', 'Approved', 'Prepare', 'Delivered', 'Success', 'Cancelled'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Trạng thái không hợp lệ. Phải là một trong: " + validStatuses.join(', ') 
+            });
+        }
+
+        const order = await orderModel.findById(id);
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy đơn hàng" });
+        }
+
+        // Cập nhật trạng thái và các trường liên quan
+        order.status = status;
+        
+        // Cập nhật isDelivered và deliveredAt nếu trạng thái là Delivered hoặc Success
+        if (status === 'Delivered' || status === 'Success') {
+            order.isDelivered = true;
+            order.deliveredAt = Date.now();
+        }
+
+        // Cập nhật isPaid và paidAt nếu trạng thái là Success
+        if (status === 'Success') {
+            order.isPaid = true;
+            order.paidAt = Date.now();
+            order.paymentStatus = 'paid';
+        }
+
+        // Cập nhật paymentStatus nếu được cung cấp
+        if (paymentStatus) {
+            order.paymentStatus = paymentStatus;
+        }
+
+        // Cập nhật paymentStatus nếu đơn hàng bị hủy
+        if (status === 'Cancelled') {
+            order.paymentStatus = 'refunded';
+        }
+
+        await order.save();
+
+        res.json({ success: true, order });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getOrderStats = async (req, res) => {
+    try {
+        // Get total orders
+        const totalOrders = await orderModel.countDocuments();
+        
+        // Get orders by status
+        const ordersByStatus = await orderModel.aggregate([
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Get orders by payment method
+        const ordersByPaymentMethod = await orderModel.aggregate([
+            {
+                $group: {
+                    _id: "$paymentMethod",
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Get total revenue
+        const totalRevenue = await orderModel.aggregate([
+            {
+                $match: {
+                    status: 'Success'
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: "$totalPrice" }
+                }
+            }
+        ]);
+
+        // Get latest orders
+        const latestOrders = await orderModel.find()
+            .populate('user', 'name email')
+            .sort({ createdAt: -1 })
+            .limit(5);
+
+        res.json({
+            success: true,
+            stats: {
+                totalOrders,
+                ordersByStatus,
+                ordersByPaymentMethod,
+                totalRevenue: totalRevenue[0]?.total || 0,
+                latestOrders
+            }
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getAllReviews = async (req, res) => {
+    try {
+        const reviews = await Review.find()
+            .populate('user', 'name email')
+            .populate('product', 'name image')
+            .populate('order', 'orderNumber')
+            .sort({ createdAt: -1 });
+
+        res.json({ success: true, reviews });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getReviewDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const review = await Review.findById(id)
+            .populate('user', 'name email')
+            .populate('product', 'name image')
+            .populate('order', 'orderNumber');
+
+        if (!review) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy đánh giá" });
+        }
+
+        res.json({ success: true, review });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const deleteReview = async (req, res) => {
+    try {
+        const { reviewId } = req.body;
+
+        if (!reviewId) {
+            return res.json({ success: false, message: "ID đánh giá là bắt buộc" });
+        }
+
+        const deletedReview = await Review.findByIdAndDelete(reviewId);
+
+        if (!deletedReview) {
+            return res.json({ success: false, message: "Không tìm thấy đánh giá" });
+        }
+
+        res.json({ success: true, message: "Xóa đánh giá thành công" });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getProductReviews = async (req, res) => {
+    try {
+        const { productId } = req.params;
+
+        const reviews = await Review.find({ product: productId })
+            .populate('user', 'name email')
+            .populate('order', 'orderNumber')
+            .sort({ createdAt: -1 });
+
+        res.json({ 
+            success: true, 
+            reviews 
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ 
+            success: false, 
+            message: 'Có lỗi xảy ra khi lấy đánh giá sản phẩm' 
+        });
+    }
+};
+
+export const getOrderReviews = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+
+        const reviews = await Review.find({ order: orderId })
+            .populate('user', 'name email')
+            .populate('product', 'name image')
+            .sort({ createdAt: -1 });
+
+        res.json({ 
+            success: true, 
+            reviews 
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ 
+            success: false, 
+            message: 'Có lỗi xảy ra khi lấy đánh giá đơn hàng' 
+        });
+    }
+};
+
+export const getUserReviews = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const reviews = await Review.find({ user: userId })
+            .populate('product', 'name image')
+            .populate('order', 'orderNumber')
+            .sort({ createdAt: -1 });
+
+        res.json({ 
+            success: true, 
+            reviews 
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ 
+            success: false, 
+            message: 'Có lỗi xảy ra khi lấy đánh giá của người dùng' 
+        });
+    }
+};
+
+export const getReviewStats = async (req, res) => {
+    try {
+        // Tổng số đánh giá
+        const totalReviews = await Review.countDocuments();
+        
+        // Đánh giá theo rating
+        const reviewsByRating = await Review.aggregate([
+            {
+                $group: {
+                    _id: "$rating",
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        // Đánh giá theo sản phẩm
+        const reviewsByProduct = await Review.aggregate([
+            {
+                $group: {
+                    _id: "$product",
+                    count: { $sum: 1 },
+                    averageRating: { $avg: "$rating" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "products",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "productDetails"
+                }
+            },
+            {
+                $unwind: "$productDetails"
+            },
+            {
+                $project: {
+                    productName: "$productDetails.name",
+                    count: 1,
+                    averageRating: 1
+                }
+            }
+        ]);
+
+        // Đánh giá mới nhất
+        const latestReviews = await Review.find()
+            .populate('user', 'name')
+            .populate('product', 'name')
+            .sort({ createdAt: -1 })
+            .limit(5);
+
+        res.json({
+            success: true,
+            stats: {
+                totalReviews,
+                reviewsByRating,
+                reviewsByProduct,
+                latestReviews
+            }
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(400).json({ 
+            success: false, 
+            message: 'Có lỗi xảy ra khi lấy thống kê đánh giá' 
+        });
     }
 };
