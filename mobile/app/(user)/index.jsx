@@ -420,7 +420,14 @@ export default function Home() {
             <View key={item._id} style={styles.productColumn}>
               <TouchableOpacity 
                 style={styles.productCard}
-                onPress={() => router.push('ProductDetail', { product: item })}
+                onPress={() => {
+                  // Chuyển đổi dữ liệu sản phẩm thành chuỗi JSON
+                  const productData = JSON.stringify(item);
+                  router.push({
+                    pathname: '/ProductDetail',
+                    params: { product: productData }
+                  });
+                }}
               >
                 <Image
                   source={{ uri: item.image }}

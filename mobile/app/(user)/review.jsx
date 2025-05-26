@@ -19,9 +19,10 @@ import COLORS from '../../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import RatingStars from '../../components/RatingStars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../../constants/config';
 
 const Review = () => {
-  const { checkAuth, getToken } = useAuthStore();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [selectedReview, setSelectedReview] = useState(null);
@@ -29,47 +30,27 @@ const Review = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const initialize = async () => {
-      try {
-        const userStr = await AsyncStorage.getItem('user');
-        if (!userStr) {
-          Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
-          return;
-        }
+    if (user?.token) {
+      fetchReviews();
+    } else {
+      Alert.alert('Thông báo', 'Vui lòng đăng nhập để xem đánh giá');
+    }
+  }, [user]);
 
-        const user = JSON.parse(userStr);
-        if (!user.token) {
-          Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
-          return;
-        }
-
-        await fetchReviews(user.token);
-      } catch (error) {
-        console.error('Initialization error:', error);
-        Alert.alert('Lỗi', 'Không thể khởi tạo ứng dụng. Vui lòng thử lại.');
-      }
-    };
-
-    initialize();
-  }, []);
-
-  const fetchReviews = async (token) => {
+  const fetchReviews = async () => {
     try {
       setLoading(true);
-      console.log('Fetching reviews with token:', token);
       
-      if (!token) {
-        Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
+      if (!user?.token) {
+        Alert.alert('Thông báo', 'Vui lòng đăng nhập để xem đánh giá');
         return;
       }
 
-      const response = await axios.get('http://192.168.19.104:4000/api/user/reviews', {
+      const response = await axios.get(`${API_URL}/api/user/reviews`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${user.token}`
         }
       });
-
-      console.log('Reviews API response:', response.data);
 
       if (response.data.success) {
         setReviews(response.data.reviews);
@@ -79,9 +60,9 @@ const Review = () => {
     } catch (error) {
       console.error('Error fetching reviews:', error);
       if (error.response?.status === 401) {
-        Alert.alert('Lỗi', 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+        Alert.alert('Thông báo', 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
       } else {
-        Alert.alert('Lỗi', 'Không thể lấy danh sách đánh giá');
+        Alert.alert('Lỗi', 'Không thể lấy danh sách đánh giá. Vui lòng thử lại sau.');
       }
     } finally {
       setLoading(false);
@@ -102,19 +83,12 @@ const Review = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const userStr = await AsyncStorage.getItem('user');
-              if (!userStr) {
-                Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
+              if (!user?.token) {
+                Alert.alert('Thông báo', 'Vui lòng đăng nhập để thực hiện thao tác này');
                 return;
               }
 
-              const user = JSON.parse(userStr);
-              if (!user.token) {
-                Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
-                return;
-              }
-
-              const response = await axios.delete(`http://192.168.19.104:4000/api/user/reviews/${reviewId}`, {
+              const response = await axios.delete(`${API_URL}/api/user/reviews/${reviewId}`, {
                 headers: {
                   Authorization: `Bearer ${user.token}`
                 }
@@ -122,16 +96,16 @@ const Review = () => {
 
               if (response.data.success) {
                 Alert.alert('Thành công', 'Đã xóa đánh giá');
-                fetchReviews(user.token);
+                fetchReviews();
               } else {
                 Alert.alert('Lỗi', response.data.message || 'Không thể xóa đánh giá');
               }
             } catch (error) {
               console.error('Error deleting review:', error);
               if (error.response?.status === 401) {
-                Alert.alert('Lỗi', 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                Alert.alert('Thông báo', 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
               } else {
-                Alert.alert('Lỗi', 'Không thể xóa đánh giá');
+                Alert.alert('Lỗi', 'Không thể xóa đánh giá. Vui lòng thử lại sau.');
               }
             }
           }

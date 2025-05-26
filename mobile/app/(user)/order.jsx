@@ -27,7 +27,6 @@ const Order = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [shouldAutoRefresh, setShouldAutoRefresh] = useState(true);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [rating, setRating] = useState(5);
@@ -94,17 +93,6 @@ const Order = () => {
         
         setOrders(newOrders);
         setLastUpdate(new Date());
-
-        // Kiểm tra xem tất cả đơn hàng đã hoàn thành chưa
-        const allOrdersCompleted = newOrders.every(order => 
-          order.status === 'Success' || order.status === 'Cancelled'
-        );
-        
-        if (allOrdersCompleted) {
-          setShouldAutoRefresh(false);
-        } else {
-          setShouldAutoRefresh(true);
-        }
       } else {
         console.error('Error in response:', response.data);
         Alert.alert('Lỗi', response.data.message || 'Không thể lấy danh sách đơn hàng');
@@ -130,19 +118,6 @@ const Order = () => {
       setLoading(false);
     }
   };
-
-  // Tự động cập nhật mỗi 5 giây nếu shouldAutoRefresh là true
-  useEffect(() => {
-    let interval;
-    if (shouldAutoRefresh) {
-      interval = setInterval(fetchOrders, 5000);
-    }
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [shouldAutoRefresh]);
 
   // Cập nhật khi màn hình được focus
   useFocusEffect(

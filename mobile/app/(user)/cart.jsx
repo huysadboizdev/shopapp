@@ -375,6 +375,14 @@ const Cart = () => {
     </View>
   );
 
+  const handleShowQR = () => {
+    setShowQRModal(true);
+  };
+
+  const handleCloseQR = () => {
+    setShowQRModal(false);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -415,125 +423,139 @@ const Cart = () => {
           </View>
         )}
         <Modal
-          animationType="fade"
-          transparent={true}
-          visible={showQRModal}
-          onRequestClose={() => setShowQRModal(false)}
-        >
-          <View style={styles.qrModalContainer}>
-            <View style={styles.qrModalContent}>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={() => setShowQRModal(false)}
-              >
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-              <Image 
-                source={require('../../assets/images/qr.jpg')} 
-                style={styles.qrModalImage}
-                resizeMode="contain"
-              />
-              <Text style={styles.qrModalText}>Quét mã QR để thanh toán</Text>
-            </View>
-          </View>
-        </Modal>
-        <Modal
           animationType="slide"
           transparent={true}
           visible={showPaymentModal}
           onRequestClose={() => setShowPaymentModal(false)}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.modalContainer}>
-              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Thông tin đặt hàng</Text>
-                  
-                  <View style={styles.deliveryInfo}>
-                    <Text style={styles.deliveryTitle}>Thông tin giao hàng</Text>
-                    <View style={styles.deliveryDetail}>
-                      <Text style={styles.deliveryLabel}>Địa chỉ:</Text>
-                      <Text style={styles.deliveryValue}>{userInfo?.address}</Text>
-                    </View>
-                    <View style={styles.deliveryDetail}>
-                      <Text style={styles.deliveryLabel}>Số điện thoại:</Text>
-                      <Text style={styles.deliveryValue}>{userInfo?.phone}</Text>
-                    </View>
-                    <TouchableOpacity 
-                      style={styles.updateProfileButton}
-                      onPress={() => {
-                        setShowPaymentModal(false);
-                        router.push('/profile');
-                      }}
-                    >
-                      <Text style={styles.updateProfileText}>Cập nhật thông tin</Text>
-                    </TouchableOpacity>
+          <View style={styles.modalContainer}>
+            <ScrollView 
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={true}
+            >
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Thông tin đặt hàng</Text>
+                
+                <View style={styles.deliveryInfo}>
+                  <Text style={styles.deliveryTitle}>Thông tin giao hàng</Text>
+                  <View style={styles.deliveryDetail}>
+                    <Text style={styles.deliveryLabel}>Địa chỉ:</Text>
+                    <Text style={styles.deliveryValue}>{userInfo?.address}</Text>
                   </View>
-
-                  <Text style={styles.noteLabel}>Ghi chú cho đơn hàng:</Text>
-                  <TextInput
-                    style={styles.noteInput}
-                    placeholder="Nhập ghi chú (nếu có)"
-                    placeholderTextColor="#666"
-                    value={note}
-                    onChangeText={setNote}
-                    multiline
-                    numberOfLines={4}
-                  />
-
-                  <Text style={styles.modalTitle}>Chọn phương thức thanh toán</Text>
-                  <View style={styles.paymentOptions}>
-                    <TouchableOpacity
-                      style={[styles.paymentOption, paymentMethod === 'COD' && styles.selectedPayment]}
-                      onPress={() => setPaymentMethod('COD')}
-                    >
-                      <Text style={styles.paymentText}>Thanh toán khi nhận hàng</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.paymentOption, paymentMethod === 'QR' && styles.selectedPayment]}
-                      onPress={() => setPaymentMethod('QR')}
-                    >
-                      <Text style={styles.paymentText}>Thanh toán qua QR Code</Text>
-                    </TouchableOpacity>
+                  <View style={styles.deliveryDetail}>
+                    <Text style={styles.deliveryLabel}>Số điện thoại:</Text>
+                    <Text style={styles.deliveryValue}>{userInfo?.phone}</Text>
                   </View>
-
-                  {paymentMethod === 'QR' && (
-                    <View style={styles.qrContainer}>
-                      <TouchableOpacity 
-                        style={styles.qrButton}
-                        onPress={() => setShowQRModal(true)}
-                      >
-                        <Text style={styles.qrButtonText}>Xem mã QR thanh toán</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  <View style={styles.modalActions}>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.cancelButton]}
-                      onPress={() => {
-                        setShowPaymentModal(false);
-                        setNote('');
-                      }}
-                    >
-                      <Text style={styles.buttonText}>Hủy</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.modalButton, styles.confirmButton]}
-                      onPress={handleConfirmOrder}
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <ActivityIndicator color="#fff" />
-                      ) : (
-                        <Text style={styles.buttonText}>Xác nhận đặt hàng</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
+                  <TouchableOpacity 
+                    style={styles.updateProfileButton}
+                    onPress={() => {
+                      setShowPaymentModal(false);
+                      router.push('/profile');
+                    }}
+                  >
+                    <Text style={styles.updateProfileText}>Cập nhật thông tin</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableWithoutFeedback>
+
+                <Text style={styles.noteLabel}>Ghi chú cho đơn hàng:</Text>
+                <TextInput
+                  style={styles.noteInput}
+                  placeholder="Nhập ghi chú (nếu có)"
+                  placeholderTextColor="#666"
+                  value={note}
+                  onChangeText={setNote}
+                  multiline
+                  numberOfLines={4}
+                />
+
+                <Text style={styles.modalTitle}>Chọn phương thức thanh toán</Text>
+                <View style={styles.paymentOptions}>
+                  <TouchableOpacity
+                    style={[styles.paymentOption, paymentMethod === 'COD' && styles.selectedPayment]}
+                    onPress={() => setPaymentMethod('COD')}
+                  >
+                    <Text style={styles.paymentText}>Thanh toán khi nhận hàng</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.paymentOption, paymentMethod === 'QR' && styles.selectedPayment]}
+                    onPress={() => setPaymentMethod('QR')}
+                  >
+                    <Text style={styles.paymentText}>Thanh toán qua QR Code</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {paymentMethod === 'QR' && (
+                  <View style={styles.qrSection}>
+                    <Text style={styles.qrTitle}>Mã QR thanh toán</Text>
+                    <Image 
+                      source={require('../../assets/images/qr.jpg')} 
+                      style={styles.qrImage}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.qrInstruction}>
+                      Vui lòng quét mã QR bằng ứng dụng ngân hàng của bạn
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => {
+                      setShowPaymentModal(false);
+                      setNote('');
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Hủy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={handleConfirmOrder}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.buttonText}>Xác nhận đặt hàng</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showQRModal}
+          onRequestClose={() => setShowQRModal(false)}
+          statusBarTranslucent={true}
+        >
+          <View style={styles.qrModalOverlay}>
+            <View style={styles.qrModalContainer}>
+              <View style={styles.qrModalContent}>
+                <TouchableOpacity 
+                  style={styles.closeButton}
+                  onPress={() => setShowQRModal(false)}
+                >
+                  <Ionicons name="close-circle" size={32} color="#333" />
+                </TouchableOpacity>
+                <Text style={styles.qrModalTitle}>
+                  Quét mã QR để thanh toán
+                </Text>
+                <Image 
+                  source={require('../../assets/images/qr.jpg')} 
+                  style={styles.qrModalImage}
+                  resizeMode="contain"
+                />
+                <Text style={styles.qrModalText}>
+                  Vui lòng quét mã QR bằng ứng dụng ngân hàng của bạn
+                </Text>
+              </View>
             </View>
-          </TouchableWithoutFeedback>
+          </View>
         </Modal>
       </View>
     </SafeAreaView>
@@ -695,12 +717,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
+  modalScrollView: {
+    width: '100%',
+    maxHeight: '80%',
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalContent: {
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
     width: '90%',
-    maxHeight: '80%',
+    marginVertical: 20,
   },
   modalTitle: {
     fontSize: 20,
@@ -844,9 +875,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
   },
-  quantityButton: {
-    padding: 5,
-  },
   quantityText: {
     marginHorizontal: 15,
     fontSize: 16,
@@ -873,50 +901,85 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 15,
   },
-  qrContainer: {
-    marginVertical: 10,
+  qrSection: {
+    marginVertical: 20,
     alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    padding: 15,
+    borderRadius: 10,
   },
-  qrButton: {
-    backgroundColor: COLORS.primary,
-    padding: 10,
-    borderRadius: 5,
+  qrTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
   },
-  qrButtonText: {
-    color: 'white',
+  qrImage: {
+    width: 250,
+    height: 250,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    marginVertical: 10,
+  },
+  qrInstruction: {
     fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
   },
-  qrModalContainer: {
+  qrModalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  qrModalContainer: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   qrModalContent: {
     backgroundColor: 'white',
     borderRadius: 20,
-    padding: 20,
+    padding: 25,
     alignItems: 'center',
-    width: '80%',
+    width: '90%',
+    maxWidth: 400,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   closeButton: {
     position: 'absolute',
-    right: 10,
-    top: 10,
-    zIndex: 1,
+    right: 15,
+    top: 15,
     padding: 5,
   },
   qrModalImage: {
-    width: 250,
-    height: 250,
+    width: 280,
+    height: 280,
     borderRadius: 10,
-    marginVertical: 20,
     backgroundColor: '#f5f5f5',
+    marginVertical: 20,
   },
   qrModalText: {
     fontSize: 16,
-    color: '#333',
+    color: '#666',
+    textAlign: 'center',
     marginTop: 10,
+  },
+  qrModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });

@@ -1,14 +1,18 @@
 const COLORS = {
-  primary: '#FF6B6B',
-  secondary: '#4ECDC4',
+  primary: '#4CAF50',
+  secondary: '#2196F3',
   background: '#FFFFFF',
-  cardBackground: '#FFFFFF',
+  cardBackground: '#F5F5F5',
   text: '#333333',
+  textSecondary: '#666666',
   border: '#E0E0E0',
-  error: '#FF3B30',
-  success: '#34C759',
-  warning: '#FFCC00',
-  info: '#007AFF',
+  error: '#FF5252',
+  success: '#4CAF50',
+  warning: '#FFC107',
+  info: '#2196F3',
+  white: '#FFFFFF',
+  grey: '#9E9E9E',
+  lightPrimary: '#E8F5E9',
 };
 
 export default COLORS;

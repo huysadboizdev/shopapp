@@ -9,13 +9,11 @@ import {
   SafeAreaView,
   StatusBar,
   ImageBackground,
-  ScrollView,
+  FlatListProps,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../constants/colors';
-import { useAuthStore } from "../store/authStore";
-import { useEffect } from "react";
 
 const { width, height } = Dimensions.get('window');
 
@@ -60,15 +58,10 @@ const slides: Slide[] = [
   },
 ];
 
-export default function Index() {
+export default function Demo() {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const router = useRouter();
   const flatListRef = useRef<FlatList<Slide>>(null);
-  const { user, token, checkAuth, logout } = useAuthStore();
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
 
   const renderSlide = ({ item }: { item: Slide }) => {
     return (

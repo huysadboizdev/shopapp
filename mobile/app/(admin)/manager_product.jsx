@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import axios from 'axios';
 import COLORS from '../../constants/colors';
-import * as ImagePicker from 'expo-image-picker';
 
 export default function ManagerProduct() {
   const [products, setProducts] = useState([]);
@@ -30,7 +29,6 @@ export default function ManagerProduct() {
     size: '',
     description: '',
     price: '',
-    image: null,
     imageLink: '',
   });
 
@@ -68,7 +66,6 @@ export default function ManagerProduct() {
       size: product.size.join(', '),
       description: product.description,
       price: product.price.toString(),
-      image: product.image,
       imageLink: product.imageLink,
     });
     setModalVisible(true);
@@ -111,19 +108,6 @@ export default function ManagerProduct() {
     );
   };
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
-
-    if (!result.canceled) {
-      setFormData({ ...formData, image: result.assets[0].uri });
-    }
-  };
-
   const handleSubmit = async () => {
     try {
       if (!formData.category || !formData.name || !formData.color || 
@@ -136,15 +120,7 @@ export default function ManagerProduct() {
       Object.keys(formData).forEach(key => {
         if (key === 'size') {
           formDataToSend.append(key, formData[key].split(',').map(s => s.trim()));
-        } else if (key === 'image' && formData[key]?.startsWith('file://')) {
-          formDataToSend.append(key, {
-            uri: formData[key],
-            type: 'image/jpeg',
-            name: 'product.jpg',
-          });
-        } else if (key === 'imageLink' && formData[key]) {
-          formDataToSend.append('imageLink', formData[key]);
-        } else if (key !== 'imageLink') {
+        } else {
           formDataToSend.append(key, formData[key]);
         }
       });
@@ -226,7 +202,6 @@ export default function ManagerProduct() {
               size: '',
               description: '',
               price: '',
-              image: null,
               imageLink: '',
             });
             setModalVisible(true);
@@ -301,27 +276,12 @@ export default function ManagerProduct() {
 
             <View style={styles.imageSection}>
               <Text style={styles.sectionTitle}>Thêm ảnh sản phẩm</Text>
-              
               <TextInput
                 style={styles.input}
                 placeholder="Nhập link ảnh"
                 value={formData.imageLink}
                 onChangeText={(text) => setFormData({ ...formData, imageLink: text })}
               />
-
-              <Text style={styles.orText}>Hoặc</Text>
-
-              <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-                <Text style={styles.imageButtonText}>
-                  {formData.image ? 'Thay đổi ảnh từ thiết bị' : 'Chọn ảnh từ thiết bị'}
-                </Text>
-              </TouchableOpacity>
-
-              {formData.image && (
-                <View style={styles.imagePreview}>
-                  <Text style={styles.previewText}>Đã chọn ảnh từ thiết bị</Text>
-                </View>
-              )}
             </View>
 
             <View style={styles.modalButtons}>
@@ -459,16 +419,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 14,
   },
-  imageButton: {
-    backgroundColor: COLORS.primary,
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 15,
+  imageSection: {
+    marginBottom: 10,
   },
-  imageButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -491,29 +448,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  imageSection: {
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  orText: {
-    textAlign: 'center',
-    marginVertical: 8,
-    color: '#666',
-    fontSize: 12,
-  },
-  imagePreview: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
-  },
-  previewText: {
-    color: '#666',
-    textAlign: 'center',
   },
 });

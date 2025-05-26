@@ -20,7 +20,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
         headerTitleStyle:{
-          color: COLORS.textPrimary,
+          color: COLORS.text,
           fontWeight: 600,
         },
         headerShadowVisible: false,
@@ -64,7 +64,7 @@ export default function TabLayout() {
         }}
       />
 
-<Tabs.Screen 
+      <Tabs.Screen 
         name="profile"
         options={{ 
           title: "Tài Khoản",
@@ -73,7 +73,8 @@ export default function TabLayout() {
           ),
         }}
       />
-  <Tabs.Screen 
+
+      <Tabs.Screen 
         name="review"
         options={{ 
           title: "Đánh Giá",
@@ -82,7 +83,15 @@ export default function TabLayout() {
           ),
         }}
       />
-  
+      <Tabs.Screen 
+        name="ProductDetail"
+        options={{ 
+          title: "Chi tiết",
+          tabBarIcon: ({color, size}) => (
+            <Ionicons name="information-circle-outline" size={size} color={color}/>
+          ),
+        }}
+      />
 
       <Tabs.Screen
         name="setting"
@@ -93,7 +102,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
     </Tabs>
   )
-}
+} 

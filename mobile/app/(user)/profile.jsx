@@ -4,14 +4,14 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../store/authStore';
 import COLORS from '../../constants/colors';
+import { API_URL } from '../../constants/config';
 
 const Profile = () => {
     const router = useRouter();
     const { user: authUser, setUser } = useAuthStore();
-    const [user, setUserData] = useState(null);
+    const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
     const [formData, setFormData] = useState({
@@ -21,44 +21,42 @@ const Profile = () => {
     });
 
     useEffect(() => {
-        console.log('Profile component mounted');
-        const checkAuth = async () => {
-            try {
-                const token = await AsyncStorage.getItem('userToken');
-                console.log('Stored token:', token);
-                
-                if (!token) {
-                    router.replace('/login');
-                    return;
-                }
-                fetchUserData();
-            } catch (error) {
-                console.error('Auth check error:', error);
-            }
-        };
-        checkAuth();
-    }, []);
+        if (authUser?.token) {
+            fetchUserData();
+        } else {
+            router.replace('/login');
+        }
+    }, [authUser]);
 
     const fetchUserData = async () => {
         try {
-            const token = await AsyncStorage.getItem('userToken');
-            if (!token) {
+            if (!authUser?.token) {
                 router.replace('/login');
                 return;
             }
 
-            const response = await axios.get('http://192.168.19.104:4000/api/user/get-user', {
-                headers: { Authorization: `Bearer ${token}` }
+            const response = await axios.get(`${API_URL}/api/user/get-user`, {
+                headers: { 
+                    Authorization: `Bearer ${authUser.token}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
             if (response.data.success) {
-                const userData = response.data.user;
-                setUserData(userData);
-                setUser(userData);
+                const user = response.data.user;
+                // Xử lý URL ảnh
+                if (user.image) {
+                    // Kiểm tra xem URL đã có http chưa
+                    if (!user.image.startsWith('http')) {
+                        user.image = `${API_URL}/${user.image.replace(/\\/g, '/')}`;
+                    }
+                    console.log('Profile image URL:', user.image); // Debug log
+                }
+                setUserData(user);
                 setFormData({
-                    name: userData.name || '',
-                    phone: userData.phone || '',
-                    address: userData.address || ''
+                    name: user.name || '',
+                    phone: user.phone || '',
+                    address: user.address || ''
                 });
             }
         } catch (error) {
@@ -82,17 +80,14 @@ const Profile = () => {
             }
 
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ['image'],
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.8,
             });
 
             if (!result.canceled) {
-                await updateProfile({ 
-                    ...formData,
-                    image: result.assets[0].uri 
-                });
+                await updateProfileImage(result.assets[0].uri);
             }
         } catch (error) {
             console.error('Error picking image:', error);
@@ -100,82 +95,96 @@ const Profile = () => {
         }
     };
 
-    const updateProfile = async (data) => {
+    const updateProfileImage = async (imageUri) => {
         try {
-            const token = await AsyncStorage.getItem('userToken');
-            console.log('Using token for update:', token);
-            
-            if (!token) {
+            if (!authUser?.token) {
                 Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
                 router.replace('/login');
                 return;
             }
 
-            const requestData = {
-                userId: user._id,
-                name: data.name,
-                phone: data.phone,
-                address: data.address
-            };
-
-            console.log('Sending request to server:', {
-                url: 'http://192.168.19.104:4000/api/user/update-profile',
-                method: 'PUT',
-                data: requestData,
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+            const formData = new FormData();
+            formData.append('image', {
+                uri: imageUri,
+                type: 'image/jpeg',
+                name: 'profile.jpg',
             });
+            formData.append('userId', userData._id);
 
             const response = await axios.put(
-                'http://192.168.19.104:4000/api/user/update-profile',
-                requestData,
+                `${API_URL}/api/user/update-profile`,
+                formData,
                 {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${authUser.token}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }
+            );
+
+            if (response.data.success) {
+                Alert.alert('Thành công', 'Cập nhật ảnh đại diện thành công');
+                fetchUserData();
+            } else {
+                Alert.alert('Lỗi', response.data.message || 'Cập nhật ảnh thất bại');
+            }
+        } catch (error) {
+            console.error('Update image error:', error);
+            if (error.response?.status === 401) {
+                setUser(null);
+                router.replace('/login');
+            } else {
+                Alert.alert('Lỗi', 'Không thể cập nhật ảnh đại diện');
+            }
+        }
+    };
+
+    const updateProfile = async (data) => {
+        try {
+            if (!authUser?.token) {
+                Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                router.replace('/login');
+                return;
+            }
+
+            const response = await axios.put(
+                `${API_URL}/api/user/update-profile`,
+                {
+                    userId: userData._id,
+                    name: data.name,
+                    phone: data.phone,
+                    address: data.address
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${authUser.token}`,
                         'Content-Type': 'application/json'
                     }
                 }
             );
 
-            console.log('Server response:', response.data);
-
             if (response.data.success) {
                 const updatedUser = {
-                    ...user,
+                    ...userData,
                     name: data.name,
                     phone: data.phone,
                     address: data.address
                 };
                 
                 setUserData(updatedUser);
-                setUser(updatedUser);
-                
                 Alert.alert('Thành công', 'Cập nhật thông tin thành công');
                 setEditing(false);
-                await fetchUserData();
+                fetchUserData();
             } else {
-                console.error('Update failed:', response.data);
                 Alert.alert('Lỗi', response.data.message || 'Cập nhật thông tin thất bại');
             }
         } catch (error) {
-            console.error('Update Error Details:', {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status,
-                data: error.response?.data,
-                config: error.config
-            });
-            
+            console.error('Update profile error:', error);
             if (error.response?.status === 401) {
                 setUser(null);
                 router.replace('/login');
             } else {
-                Alert.alert(
-                    'Lỗi',
-                    error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin'
-                );
+                Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật thông tin');
             }
         }
     };
@@ -185,17 +194,11 @@ const Profile = () => {
             Alert.alert('Lỗi', 'Vui lòng nhập tên người dùng');
             return;
         }
-        if (!user?._id) {
-            Alert.alert('Lỗi', 'Không tìm thấy thông tin người dùng');
-            return;
-        }
-        console.log('Saving with data:', formData);
         updateProfile(formData);
     };
 
     const handleLogout = async () => {
         try {
-            console.log('Logging out...');
             setUser(null);
             router.replace('/login');
         } catch (error) {
@@ -234,8 +237,12 @@ const Profile = () => {
             <ScrollView style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={handleImagePick} style={styles.imageContainer}>
-                        {user?.image ? (
-                            <Image source={{ uri: user.image }} style={styles.profileImage} />
+                        {userData?.image ? (
+                            <Image 
+                                source={{ uri: userData.image }} 
+                                style={styles.profileImage}
+                                onError={(e) => console.log('Image loading error:', e.nativeEvent.error)}
+                            />
                         ) : (
                             <View style={styles.placeholderImage}>
                                 <Ionicons name="person" size={50} color="#666" />
@@ -245,7 +252,7 @@ const Profile = () => {
                             <Ionicons name="camera" size={20} color="#fff" />
                         </View>
                     </TouchableOpacity>
-                    <Text style={styles.userName}>{user?.name || 'Chưa cập nhật'}</Text>
+                    <Text style={styles.userName}>{userData?.name || 'Chưa cập nhật'}</Text>
                 </View>
 
                 <View style={styles.infoContainer}>
@@ -283,9 +290,9 @@ const Profile = () => {
                                     onPress={() => {
                                         setEditing(false);
                                         setFormData({
-                                            name: user.name || '',
-                                            phone: user.phone || '',
-                                            address: user.address || ''
+                                            name: userData.name || '',
+                                            phone: userData.phone || '',
+                                            address: userData.address || ''
                                         });
                                     }}
                                 >
@@ -299,19 +306,19 @@ const Profile = () => {
                                 <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>Tên:</Text>
-                                    <Text style={styles.value}>{user?.name || 'Chưa cập nhật'}</Text>
+                                    <Text style={styles.value}>{userData?.name || 'Chưa cập nhật'}</Text>
                                 </View>
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>Email:</Text>
-                                    <Text style={styles.value}>{user?.email || 'Chưa cập nhật'}</Text>
+                                    <Text style={styles.value}>{userData?.email || 'Chưa cập nhật'}</Text>
                                 </View>
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>Số điện thoại:</Text>
-                                    <Text style={styles.value}>{user?.phone || 'Chưa cập nhật'}</Text>
+                                    <Text style={styles.value}>{userData?.phone || 'Chưa cập nhật'}</Text>
                                 </View>
                                 <View style={styles.infoRow}>
                                     <Text style={styles.label}>Địa chỉ:</Text>
-                                    <Text style={styles.value}>{user?.address || 'Chưa cập nhật'}</Text>
+                                    <Text style={styles.value}>{userData?.address || 'Chưa cập nhật'}</Text>
                                 </View>
                             </View>
 
