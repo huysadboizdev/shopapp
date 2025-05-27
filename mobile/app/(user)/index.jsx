@@ -35,6 +35,8 @@ export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState('1');
   const { addToCart: addToCartStore } = useCartStore();
+  const [productDetailModalVisible, setProductDetailModalVisible] = useState(false);
+  const [selectedProductDetail, setSelectedProductDetail] = useState(null);
 
   const categories = [
     { id: 'all', name: 'Tất cả' },
@@ -226,22 +228,22 @@ export default function Home() {
     }
   };
 
-  const addToCart = async (item) => {
+  const handleProductPress = (item) => {
+    setSelectedProductDetail(item);
+    setProductDetailModalVisible(true);
+  };
+
+  const addToCart = async () => {
     try {
-      if (!item || !item._id) {
-        Alert.alert('Lỗi', 'Thông tin sản phẩm không hợp lệ');
+      if (!user?.token) {
+        Alert.alert('Lỗi', 'Vui lòng đăng nhập để thêm vào giỏ hàng');
+        router.push('/login');
         return;
       }
 
-      console.log('Adding to cart:', {
-        productId: item._id,
-        quantity: 1,
-        token: user.token
-      });
-
       const cartItem = {
-        productId: item,
-        quantity: 1
+        productId: selectedProductDetail,
+        quantity: parseInt(quantity)
       };
 
       // Cập nhật UI ngay lập tức
@@ -250,8 +252,8 @@ export default function Home() {
       const response = await axios.post(
         'http://192.168.19.104:4000/api/user/add_cart',
         {
-          productId: item._id,
-          quantity: 1
+          productId: selectedProductDetail._id,
+          quantity: parseInt(quantity)
         },
         {
           headers: {
@@ -260,8 +262,6 @@ export default function Home() {
           }
         }
       );
-
-      console.log('Add to cart response:', response.data);
 
       if (response.data.success) {
         Alert.alert(
@@ -278,25 +278,13 @@ export default function Home() {
             }
           ]
         );
+        setProductDetailModalVisible(false);
       } else {
-        // Nếu API call thất bại, rollback cart state
         Alert.alert('Lỗi', response.data.message || 'Không thể thêm vào giỏ hàng');
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-        Alert.alert(
-          'Lỗi',
-          error.response.data.message || 'Không thể thêm vào giỏ hàng'
-        );
-      } else if (error.request) {
-        console.error('Error request:', error.request);
-        Alert.alert('Lỗi', 'Không thể kết nối đến máy chủ');
-      } else {
-        console.error('Error message:', error.message);
-        Alert.alert('Lỗi', 'Có lỗi xảy ra khi thêm vào giỏ hàng');
-      }
+      Alert.alert('Lỗi', 'Có lỗi xảy ra khi thêm vào giỏ hàng');
     }
   };
 
@@ -420,14 +408,7 @@ export default function Home() {
             <View key={item._id} style={styles.productColumn}>
               <TouchableOpacity 
                 style={styles.productCard}
-                onPress={() => {
-                  // Chuyển đổi dữ liệu sản phẩm thành chuỗi JSON
-                  const productData = JSON.stringify(item);
-                  router.push({
-                    pathname: '/ProductDetail',
-                    params: { product: productData }
-                  });
-                }}
+                onPress={() => handleProductPress(item)}
               >
                 <Image
                   source={{ uri: item.image }}
@@ -452,7 +433,7 @@ export default function Home() {
                   </View>
                   <TouchableOpacity 
                     style={styles.addToCartButton}
-                    onPress={() => addToCart(item)}
+                    onPress={() => handleProductPress(item)}
                   >
                     <Text style={styles.addToCartButtonText}>Thêm vào giỏ</Text>
                   </TouchableOpacity>
@@ -462,6 +443,91 @@ export default function Home() {
           ))}
         </View>
       </ScrollView>
+
+      {/* Product Detail Modal */}
+      <Modal
+        visible={productDetailModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setProductDetailModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => setProductDetailModalVisible(false)}
+              >
+                <Ionicons name="arrow-back" size={24} color="#333" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Chi tiết sản phẩm</Text>
+              <View style={styles.placeholder} />
+            </View>
+
+            <ScrollView style={styles.modalScrollView}>
+              {selectedProductDetail && (
+                <>
+                  <Image
+                    source={{ uri: selectedProductDetail.image }}
+                    style={styles.modalProductImage}
+                    resizeMode="cover"
+                  />
+
+                  <View style={styles.modalProductInfo}>
+                    <Text style={styles.modalProductName}>{selectedProductDetail.name}</Text>
+                    <Text style={styles.modalProductPrice}>
+                      {selectedProductDetail.price ? selectedProductDetail.price.toLocaleString('vi-VN') + 'đ' : '0đ'}
+                    </Text>
+
+                    <View style={styles.modalSection}>
+                      <Text style={styles.modalSectionTitle}>Mô tả</Text>
+                      <Text style={styles.modalDescription}>{selectedProductDetail.description}</Text>
+                    </View>
+
+                    <View style={styles.modalSection}>
+                      <Text style={styles.modalSectionTitle}>Thông tin chi tiết</Text>
+                      <View style={styles.modalDetailsContainer}>
+                        <View style={styles.modalDetailRow}>
+                          <Text style={styles.modalDetailLabel}>Size:</Text>
+                          <Text style={styles.modalDetailValue}>
+                            {Array.isArray(selectedProductDetail.size) ? selectedProductDetail.size.join(', ') : selectedProductDetail.size}
+                          </Text>
+                        </View>
+                        <View style={styles.modalDetailRow}>
+                          <Text style={styles.modalDetailLabel}>Màu sắc:</Text>
+                          <Text style={styles.modalDetailValue}>{selectedProductDetail.color}</Text>
+                        </View>
+                        <View style={styles.modalDetailRow}>
+                          <Text style={styles.modalDetailLabel}>Danh mục:</Text>
+                          <Text style={styles.modalDetailValue}>{selectedProductDetail.category}</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.modalQuantityContainer}>
+                      <Text style={styles.modalQuantityLabel}>Số lượng:</Text>
+                      <TextInput
+                        style={styles.modalQuantityInput}
+                        value={quantity}
+                        onChangeText={setQuantity}
+                        keyboardType="numeric"
+                        placeholder="Nhập số lượng"
+                      />
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.modalAddToCartButton}
+                      onPress={addToCart}
+                    >
+                      <Text style={styles.modalAddToCartButtonText}>Thêm vào giỏ hàng</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -620,5 +686,116 @@ const styles = StyleSheet.create({
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    flex: 1,
+    backgroundColor: '#fff',
+    marginTop: 50,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalScrollView: {
+    flex: 1,
+  },
+  modalProductImage: {
+    width: '100%',
+    height: 300,
+  },
+  modalProductInfo: {
+    padding: 20,
+  },
+  modalProductName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalProductPrice: {
+    fontSize: 22,
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalSection: {
+    marginBottom: 20,
+  },
+  modalSectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalDescription: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
+  },
+  modalDetailsContainer: {
+    backgroundColor: '#f8f8f8',
+    padding: 15,
+    borderRadius: 10,
+  },
+  modalDetailRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  modalDetailLabel: {
+    flex: 1,
+    fontSize: 16,
+    color: '#666',
+  },
+  modalDetailValue: {
+    flex: 2,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalQuantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalQuantityLabel: {
+    fontSize: 16,
+    marginRight: 10,
+  },
+  modalQuantityInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 10,
+    fontSize: 16,
+  },
+  modalAddToCartButton: {
+    backgroundColor: COLORS.primary,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalAddToCartButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    padding: 10,
+  },
+  placeholder: {
+    width: 24,
+    height: 24,
   },
 });

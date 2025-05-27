@@ -83,7 +83,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen 
+      {/* <Tabs.Screen 
         name="ProductDetail"
         options={{ 
           title: "Chi tiết",
@@ -91,7 +91,7 @@ export default function TabLayout() {
             <Ionicons name="information-circle-outline" size={size} color={color}/>
           ),
         }}
-      />
+      /> */}
 
       <Tabs.Screen
         name="setting"
